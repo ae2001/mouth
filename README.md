@@ -46,33 +46,35 @@ These scores serve as regression targets for training models.
 
 **Credibility Score:**
 
-$$
-\text{credibility\_score} = \frac{1 \cdot \text{true} + 0.8 \cdot \text{mostly\_true} + 0.6 \cdot \text{half\_true} + 0.4 \cdot \text{barely\_true} + 0.2 \cdot \text{pants\_fire} + 0 \cdot \text{false}}{\text{total\_claims}}
-$$
+\[
+\text{credibility\_score} = \frac{1 \cdot \mathrm{true} + 0.8 \cdot \mathrm{mostly\_true} + 0.6 \cdot \mathrm{half\_true} + 0.4 \cdot \mathrm{barely\_true} + 0.2 \cdot \mathrm{pants\_fire} + 0 \cdot \mathrm{false}}{\mathrm{total\_claims}}
+\]
 
 **Liar Index:**
 
-$$
-\text{liar\_index} = \frac{\text{false} + \text{pants\_fire}}{\text{total\_claims}}
-$$
+\[
+\text{liar\_index} = \frac{\mathrm{false} + \mathrm{pants\_fire}}{\mathrm{total\_claims}}
+\]
 
 **False-to-True Ratio:**
 
-$$
-\text{false\_true\_ratio} = \frac{\text{false} + \text{pants\_fire}}{\text{true} + \varepsilon}, \quad \varepsilon = 10^{-5}
-$$
+\[
+\text{false\_true\_ratio} = \frac{\mathrm{false} + \mathrm{pants\_fire}}{\mathrm{true} + \varepsilon}, \quad \varepsilon = 10^{-5}
+\]
 
 **Entropy of Truthfulness:**
 
-$$
-H(p) = - \sum_{i} p_i \log(p_i), \quad p_i = \frac{\text{label\_count}_i}{\text{total\_claims}}
-$$
+\[
+H(p) = - \sum_{i} p_i \log(p_i), \quad p_i = \frac{\mathrm{label\_count}_i}{\mathrm{total\_claims}}
+\]
+
 
 **Meta Learner Input Vector:**
 
-$$
-\mathbf{x} = [s_{\text{BERT}}, s_{\text{RoBERTa}}, s_{\text{DistilBERT}}, s_{\text{ALBERT}}, s_{\text{Longformer}}, \text{credibility\_score}, \text{liar\_index}, \text{false\_true\_ratio}, \text{entropy}]
-$$
+\[
+\mathbf{x} = [s_{\mathrm{BERT}}, s_{\mathrm{RoBERTa}}, s_{\mathrm{DistilBERT}}, s_{\mathrm{ALBERT}}, s_{\mathrm{Longformer}}, \mathrm{credibility\_score}, \mathrm{liar\_index}, \mathrm{false\_true\_ratio}, \mathrm{entropy}]
+\]
+
 
 These features are later fed into the meta learner along with transformer predictions.
 
