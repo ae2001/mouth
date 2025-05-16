@@ -121,28 +121,7 @@ x = [
 
 ## Folder Structure
 
-```
-veriscope/
-├── data/
-│   ├── raw/
-│   ├── processed/
-│   └── meta_input.csv
-├── models/
-│   ├── *.pt (base models)
-│   └── meta_model.pkl
-├── train/
-│   └── train_*.py
-├── inference/
-│   └── ensemble_predict.py
-├── utils/
-│   ├── preprocess.py
-│   ├── feature_engineering.py
-│   └── evaluation.py
-├── app/
-│   └── main.py
-├── requirements.txt
-└── config.yaml
-```
+![Veriscope Folder Structure](images/veriscope_structure.png)
 
 ---
 
