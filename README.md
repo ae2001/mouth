@@ -2,7 +2,7 @@
 
 ## Overview
 
-Veriscope is a real-time, probabilistic fake news detection system. It predicts the veracity of social media claims on a continuous scale from 1.0 (true) to 0.0 (false), combining fine-tuned transformer models and a meta learning layer enhanced with mathematically derived credibility features. This system is designed for high-stakes applications where binary classification is insufficient, such as political discourse, public health, and policy communication.
+Veriscope is a real-time, probabilistic fake news detection system. It predicts the veracity of social media claims on a continuous scale from 1.0 (true) to 0.0 (false), combining fine-tuned transformer models and a meta learning layer enhanced with mathematically derived credibility features.
 
 ## Problem Statement
 
@@ -13,74 +13,64 @@ Traditional fake news classifiers rely on binary or multi-class labels, which fa
 **Source**: LIAR dataset with 12,822 labeled claims
 
 ### Key Fields
+
 - `claim`: Textual statement made by a public figure or entity
 - `label`: Truthfulness rating (true, mostly-true, etc.)
-- `speaker`, `party`, `state`: Metadata about the person/entity making the claim
-- `true_count`, `false_count`, etc.: Speaker’s historical credibility data
-- `context`: Medium of the statement (e.g., news release, tweet)
+- `speaker`, `party`, `state`: Metadata
+- `true_count`, `false_count`, etc.: Speaker history
+- `context`: Statement medium (e.g., tweet, release)
 
 ### Label Conversion
-
-Labels are mapped to a continuous scale:
 
 - `true` → 1.0  
 - `mostly-true` → 0.8  
 - `half-true` → 0.6  
 - `barely-true` → 0.4  
 - `pants-fire` → 0.2  
-- `false` → 0.0  
+- `false` → 0.0
 
-These scores serve as regression targets for training models.
+---
 
 ## Methodology
 
 ### Step 1: Data Preprocessing
 
-- Clean text: Lowercasing, punctuation removal, whitespace normalization
-- Normalize categorical fields (e.g., unknown for missing job titles)
-- Map `label` column to probabilistic `veracity_score`
+- Clean text (lowercasing, punctuation removal)
+- Normalize labels to veracity scores
+- Handle missing metadata
 
 ### Step 2: Mathematically Derived Features
 
-### Mathematically Derived Features
+**Credibility Score**
 
-**Credibility Score:**
+```
+credibility_score = (1 * true + 0.8 * mostly_true + 0.6 * half_true +
+                     0.4 * barely_true + 0.2 * pants_fire + 0 * false) / total_claims
+```
 
-\[
-\text{credibility\_score} = \frac{1 \cdot \mathrm{true} + 0.8 \cdot \mathrm{mostly\_true} + 0.6 \cdot \mathrm{half\_true} + 0.4 \cdot \mathrm{barely\_true} + 0.2 \cdot \mathrm{pants\_fire} + 0 \cdot \mathrm{false}}{\mathrm{total\_claims}}
-\]
+**Liar Index**
 
-**Liar Index:**
+```
+liar_index = (false + pants_fire) / total_claims
+```
 
-\[
-\text{liar\_index} = \frac{\mathrm{false} + \mathrm{pants\_fire}}{\mathrm{total\_claims}}
-\]
+**False-to-True Ratio**
 
-**False-to-True Ratio:**
+```
+false_true_ratio = (false + pants_fire) / (true + epsilon)
+```
 
-\[
-\text{false\_true\_ratio} = \frac{\mathrm{false} + \mathrm{pants\_fire}}{\mathrm{true} + \varepsilon}, \quad \varepsilon = 10^{-5}
-\]
+Where `epsilon = 1e-5`
 
-**Entropy of Truthfulness:**
+**Entropy of Truthfulness**
 
-\[
-H(p) = - \sum_{i} p_i \log(p_i), \quad p_i = \frac{\mathrm{label\_count}_i}{\mathrm{total\_claims}}
-\]
+```
+H(p) = - Σ (p_i * log(p_i)) where p_i = label_count_i / total_claims
+```
 
+### Step 3: Base Models
 
-**Meta Learner Input Vector:**
-
-\[
-\mathbf{x} = [s_{\mathrm{BERT}}, s_{\mathrm{RoBERTa}}, s_{\mathrm{DistilBERT}}, s_{\mathrm{ALBERT}}, s_{\mathrm{Longformer}}, \mathrm{credibility\_score}, \mathrm{liar\_index}, \mathrm{false\_true\_ratio}, \mathrm{entropy}]
-\]
-
-
-These features are later fed into the meta learner along with transformer predictions.
-
-### Step 3: Base Models (Transformers as Regressors)
-
-Five transformer models are fine-tuned as regressors:
+Train 5 transformer models as regressors:
 
 - BERT-base
 - RoBERTa-base
@@ -88,99 +78,91 @@ Five transformer models are fine-tuned as regressors:
 - ALBERT
 - Longformer
 
-Each model predicts a continuous veracity score using Mean Squared Error (MSE) as the loss function. Predictions on the validation set are stored for meta learning.
+Each model predicts a score between 0 and 1 using MSE loss.
 
-### Step 4: Meta Learner (Stacked Ensemble)
+### Step 4: Meta Learner
 
-The meta learner takes five model predictions and engineered features as input:
+**Input vector to meta model:**
 
-**Input to Meta Model:**
+```
+x = [
+  s_BERT, s_RoBERTa, s_DistilBERT, s_ALBERT, s_Longformer,
+  credibility_score, liar_index, false_true_ratio, entropy
+]
+```
 
-$$
-\mathbf{x} = [s_{\text{BERT}}, s_{\text{RoBERTa}}, s_{\text{DistilBERT}}, s_{\text{ALBERT}}, s_{\text{Longformer}}, \text{credibility\_score}, \text{liar\_index}, \text{false\_true\_ratio}, \text{entropy}]
-$$
+**Meta model options:**
 
-**Meta Learner Models:**
-- XGBoost Regressor (recommended)
+- XGBoost Regressor
 - LightGBM Regressor
 - Linear Regression (baseline)
 
-The output is the final predicted veracity score for the claim.
+---
 
 ## Inference Pipeline
 
-1. Input: A new claim (string)
-2. Preprocess the text
-3. Generate predictions from each base model
-4. Compute derived features from metadata (if available)
-5. Feed predictions and features into the meta model
-6. Output: A score in [0.0, 1.0] representing veracity
+1. Accept input claim  
+2. Clean and preprocess text  
+3. Generate predictions from base models  
+4. Compute mathematically derived features  
+5. Feed all values into the meta learner  
+6. Return veracity score ∈ [0.0, 1.0]  
+
+---
 
 ## Evaluation Metrics
 
 - Mean Squared Error (MSE)
 - Mean Absolute Error (MAE)
 - Pearson and Spearman Correlation
-- AUROC (for threshold-based classification)
-- Coverage of flagged content below a risk threshold
+- AUROC (if thresholds are used)
+
+---
 
 ## Folder Structure
 
-```plaintext
+```
 veriscope/
 ├── data/
-│   ├── raw/                   # Original LIAR dataset
-│   ├── processed/             # Cleaned and labeled dataset
-│   └── meta_input.csv         # Meta model training features
+│   ├── raw/
+│   ├── processed/
+│   └── meta_input.csv
 ├── models/
-│   ├── bert_model.pt
-│   ├── roberta_model.pt
-│   ├── distilbert_model.pt
-│   ├── albert_model.pt
-│   ├── longformer_model.pt
+│   ├── *.pt (base models)
 │   └── meta_model.pkl
 ├── train/
-│   ├── train_bert.py
-│   ├── train_roberta.py
-│   ├── train_distilbert.py
-│   ├── train_albert.py
-│   ├── train_longformer.py
-│   └── train_meta.py
+│   └── train_*.py
 ├── inference/
-│   └── ensemble_predict.py    # Runs base models + meta model
+│   └── ensemble_predict.py
 ├── utils/
-│   ├── preprocess.py          # Text and label processing
-│   ├── feature_engineering.py # Derived features computation
-│   └── evaluation.py          # Metrics and plots
+│   ├── preprocess.py
+│   ├── feature_engineering.py
+│   └── evaluation.py
 ├── app/
-│   └── main.py                # Optional: Streamlit or Flask UI
-├── README.md
+│   └── main.py
 ├── requirements.txt
 └── config.yaml
-
+```
 
 ---
 
 ## Expected Output
 
-Given a textual claim (e.g., from social media), the system will output:
-- A veracity probability score between 0.0 and 1.0
-- Optional: Individual model predictions
-- Optional: Risk flags or alerts based on configured thresholds
+- Veracity score between 0.0 and 1.0  
+- Optional: intermediate predictions from base models  
+- Optional: flag for review based on threshold  
 
 ---
 
-## Deployment and Extensions
+## Extensions
 
-The system can be extended with:
-
-- Claim matching: Embedding-based similarity search against Wikipedia, PolitiFact
-- Network analysis: Identify bot-like propagation via graph modeling
-- Feedback loop: Incorporate user or moderator feedback for retraining
-- Frontend: Integrate with Streamlit/Gradio for live testing
+- Integrate claim matching with Wikipedia or ClaimReview  
+- Graph-based analysis of content propagation  
+- Feedback loop for human-in-the-loop validation  
+- Frontend UI using Streamlit or Gradio  
 
 ---
 
 ## License
 
-This project is open-source and available for research and educational use.
+This project is open-source and available for academic and research use.
