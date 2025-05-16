@@ -1,0 +1,158 @@
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{geometry}
+\geometry{margin=1in}
+\title{Veriscope: Probabilistic Fake News Detection System}
+\author{}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\section*{Overview}
+Veriscope is a real-time, probabilistic fake news detection system. It predicts the veracity of social media claims on a continuous scale from 1.0 (true) to 0.0 (false), combining fine-tuned transformer models and a meta learning layer enhanced with mathematically derived credibility features.
+
+\section*{Problem Statement}
+Traditional fake news classifiers rely on binary or multi-class labels, which fail to capture the subtle spectrum of misinformation. Furthermore, they ignore speaker credibility history and contextual factors. Veriscope addresses these limitations by predicting a probabilistic veracity score using ensemble learning, thereby offering a more accurate and flexible solution for misinformation detection.
+
+\section*{Dataset: LIAR}
+\textbf{Source}: LIAR dataset with 12,822 labeled claims
+
+\subsection*{Key Fields}
+\begin{itemize}
+  \item \texttt{claim}: Textual statement made by a public figure or entity
+  \item \texttt{label}: Truthfulness rating (true, mostly-true, etc.)
+  \item \texttt{speaker}, \texttt{party}, \texttt{state}: Metadata
+  \item \texttt{true\_count}, \texttt{false\_count}, etc.: Speaker history
+  \item \texttt{context}: Statement medium (e.g., tweet, release)
+\end{itemize}
+
+\subsection*{Label Conversion}
+\begin{itemize}
+  \item true $\rightarrow$ 1.0
+  \item mostly-true $\rightarrow$ 0.8
+  \item half-true $\rightarrow$ 0.6
+  \item barely-true $\rightarrow$ 0.4
+  \item pants-fire $\rightarrow$ 0.2
+  \item false $\rightarrow$ 0.0
+\end{itemize}
+
+\section*{Methodology}
+
+\subsection*{Step 1: Data Preprocessing}
+\begin{itemize}
+  \item Clean text (lowercasing, punctuation removal)
+  \item Normalize labels to veracity scores
+  \item Handle missing metadata
+\end{itemize}
+
+\subsection*{Step 2: Mathematically Derived Features}
+
+\textbf{Credibility Score:}
+\[
+\text{credibility\_score} = \frac{1 \cdot \mathrm{true} + 0.8 \cdot \mathrm{mostly\_true} + 0.6 \cdot \mathrm{half\_true} + 0.4 \cdot \mathrm{barely\_true} + 0.2 \cdot \mathrm{pants\_fire} + 0 \cdot \mathrm{false}}{\mathrm{total\_claims}}
+\]
+
+\textbf{Liar Index:}
+\[
+\text{liar\_index} = \frac{\mathrm{false} + \mathrm{pants\_fire}}{\mathrm{total\_claims}}
+\]
+
+\textbf{False-to-True Ratio:}
+\[
+\text{false\_true\_ratio} = \frac{\mathrm{false} + \mathrm{pants\_fire}}{\mathrm{true} + \varepsilon}, \quad \varepsilon = 10^{-5}
+\]
+
+\textbf{Entropy of Truthfulness:}
+\[
+H(p) = - \sum_{i} p_i \log(p_i), \quad p_i = \frac{\mathrm{label\_count}_i}{\mathrm{total\_claims}}
+\]
+
+\subsection*{Step 3: Base Models}
+Train 5 transformer models as regressors:
+\begin{itemize}
+  \item BERT-base
+  \item RoBERTa-base
+  \item DistilBERT
+  \item ALBERT
+  \item Longformer
+\end{itemize}
+Each model predicts a score between 0 and 1 using MSE loss.
+
+\subsection*{Step 4: Meta Learner}
+
+\textbf{Input vector to meta model:}
+\[
+\mathbf{x} = [s_{\mathrm{BERT}}, s_{\mathrm{RoBERTa}}, s_{\mathrm{DistilBERT}}, s_{\mathrm{ALBERT}}, s_{\mathrm{Longformer}}, \mathrm{credibility\_score}, \mathrm{liar\_index}, \mathrm{false\_true\_ratio}, \mathrm{entropy}]
+\]
+
+Meta model options:
+\begin{itemize}
+  \item XGBoost Regressor
+  \item LightGBM Regressor
+  \item Linear Regression (baseline)
+\end{itemize}
+
+\section*{Inference Pipeline}
+\begin{enumerate}
+  \item Accept input claim
+  \item Clean and preprocess text
+  \item Generate predictions from base models
+  \item Compute mathematically derived features
+  \item Feed all values into the meta learner
+  \item Return veracity score $\in [0.0, 1.0]$
+\end{enumerate}
+
+\section*{Evaluation Metrics}
+\begin{itemize}
+  \item Mean Squared Error (MSE)
+  \item Mean Absolute Error (MAE)
+  \item Pearson and Spearman Correlation
+  \item AUROC (if thresholds are used)
+\end{itemize}
+
+\section*{Folder Structure}
+\begin{verbatim}
+veriscope/
+├── data/
+│   ├── raw/
+│   ├── processed/
+│   └── meta_input.csv
+├── models/
+│   ├── *.pt (base models)
+│   └── meta_model.pkl
+├── train/
+│   ├── train_*.py
+├── inference/
+│   └── ensemble_predict.py
+├── utils/
+│   ├── preprocess.py
+│   ├── feature_engineering.py
+│   └── evaluation.py
+├── app/
+│   └── main.py
+├── requirements.txt
+└── config.yaml
+\end{verbatim}
+
+\section*{Expected Output}
+\begin{itemize}
+  \item Veracity score between 0.0 and 1.0
+  \item Optional: intermediate predictions from base models
+  \item Optional: flag for review based on threshold
+\end{itemize}
+
+\section*{Extensions}
+\begin{itemize}
+  \item Integrate claim matching with Wikipedia or ClaimReview
+  \item Graph-based analysis of content propagation
+  \item Feedback loop for human-in-the-loop validation
+  \item Frontend UI using Streamlit or Gradio
+\end{itemize}
+
+\section*{License}
+This project is open-source and available for academic and research use.
+
+\end{document}
