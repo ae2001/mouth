@@ -42,7 +42,7 @@ These scores serve as regression targets for training models.
 
 ### Step 2: Mathematically Derived Features
 
-Objective, numeric features are engineered from speaker credibility history:
+### Mathematically Derived Features
 
 **Credibility Score:**
 
@@ -66,6 +66,12 @@ $$
 
 $$
 H(p) = - \sum_{i} p_i \log(p_i), \quad p_i = \frac{\text{label\_count}_i}{\text{total\_claims}}
+$$
+
+**Meta Learner Input Vector:**
+
+$$
+\mathbf{x} = [s_{\text{BERT}}, s_{\text{RoBERTa}}, s_{\text{DistilBERT}}, s_{\text{ALBERT}}, s_{\text{Longformer}}, \text{credibility\_score}, \text{liar\_index}, \text{false\_true\_ratio}, \text{entropy}]
 $$
 
 These features are later fed into the meta learner along with transformer predictions.
