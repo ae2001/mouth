@@ -121,7 +121,7 @@ x = [
 
 ## Folder Structure
 
-![Veriscope Folder Structure](images/veriscope_structure.png)
+!(architecture.png)
 
 ---
 
