@@ -4,13 +4,9 @@
 
 Veriscope is a real-time, probabilistic fake news detection system. It predicts the veracity of social media claims on a continuous scale from 1.0 (true) to 0.0 (false), combining fine-tuned transformer models and a meta learning layer enhanced with mathematically derived credibility features. This system is designed for high-stakes applications where binary classification is insufficient, such as political discourse, public health, and policy communication.
 
----
-
 ## Problem Statement
 
 Traditional fake news classifiers rely on binary or multi-class labels, which fail to capture the subtle spectrum of misinformation. Furthermore, they ignore speaker credibility history and contextual factors. Veriscope addresses these limitations by predicting a probabilistic veracity score using ensemble learning, thereby offering a more accurate and flexible solution for misinformation detection.
-
----
 
 ## Dataset: LIAR
 
@@ -36,8 +32,6 @@ Labels are mapped to a continuous scale:
 
 These scores serve as regression targets for training models.
 
----
-
 ## Methodology
 
 ### Step 1: Data Preprocessing
@@ -51,28 +45,30 @@ These scores serve as regression targets for training models.
 Objective, numeric features are engineered from speaker credibility history:
 
 **Credibility Score:**
-\[
+
+$$
 \text{credibility\_score} = \frac{1 \cdot \text{true} + 0.8 \cdot \text{mostly\_true} + 0.6 \cdot \text{half\_true} + 0.4 \cdot \text{barely\_true} + 0.2 \cdot \text{pants\_fire} + 0 \cdot \text{false}}{\text{total\_claims}}
-\]
+$$
 
 **Liar Index:**
-\[
+
+$$
 \text{liar\_index} = \frac{\text{false} + \text{pants\_fire}}{\text{total\_claims}}
-\]
+$$
 
 **False-to-True Ratio:**
-\[
+
+$$
 \text{false\_true\_ratio} = \frac{\text{false} + \text{pants\_fire}}{\text{true} + \varepsilon}, \quad \varepsilon = 10^{-5}
-\]
+$$
 
 **Entropy of Truthfulness:**
-\[
+
+$$
 H(p) = - \sum_{i} p_i \log(p_i), \quad p_i = \frac{\text{label\_count}_i}{\text{total\_claims}}
-\]
+$$
 
-These are later fed into the meta learner along with transformer predictions.
-
----
+These features are later fed into the meta learner along with transformer predictions.
 
 ### Step 3: Base Models (Transformers as Regressors)
 
@@ -86,16 +82,15 @@ Five transformer models are fine-tuned as regressors:
 
 Each model predicts a continuous veracity score using Mean Squared Error (MSE) as the loss function. Predictions on the validation set are stored for meta learning.
 
----
-
 ### Step 4: Meta Learner (Stacked Ensemble)
 
 The meta learner takes five model predictions and engineered features as input:
 
 **Input to Meta Model:**
-\[
-\textbf{x} = [s_{\text{BERT}}, s_{\text{RoBERTa}}, s_{\text{DistilBERT}}, s_{\text{ALBERT}}, s_{\text{Longformer}}, \text{credibility\_score}, \text{liar\_index}, \text{false\_true\_ratio}, \text{entropy}]
-\]
+
+$$
+\mathbf{x} = [s_{\text{BERT}}, s_{\text{RoBERTa}}, s_{\text{DistilBERT}}, s_{\text{ALBERT}}, s_{\text{Longformer}}, \text{credibility\_score}, \text{liar\_index}, \text{false\_true\_ratio}, \text{entropy}]
+$$
 
 **Meta Learner Models:**
 - XGBoost Regressor (recommended)
@@ -103,8 +98,6 @@ The meta learner takes five model predictions and engineered features as input:
 - Linear Regression (baseline)
 
 The output is the final predicted veracity score for the claim.
-
----
 
 ## Inference Pipeline
 
@@ -115,8 +108,6 @@ The output is the final predicted veracity score for the claim.
 5. Feed predictions and features into the meta model
 6. Output: A score in [0.0, 1.0] representing veracity
 
----
-
 ## Evaluation Metrics
 
 - Mean Squared Error (MSE)
@@ -125,40 +116,40 @@ The output is the final predicted veracity score for the claim.
 - AUROC (for threshold-based classification)
 - Coverage of flagged content below a risk threshold
 
----
-
 ## Folder Structure
 
+```plaintext
 veriscope/
 ├── data/
-│ ├── raw/ # Original LIAR dataset
-│ ├── processed/ # Cleaned and labeled dataset
-│ └── meta_input.csv # Meta model training features
+│   ├── raw/                   # Original LIAR dataset
+│   ├── processed/             # Cleaned and labeled dataset
+│   └── meta_input.csv         # Meta model training features
 ├── models/
-│ ├── bert_model.pt
-│ ├── roberta_model.pt
-│ ├── distilbert_model.pt
-│ ├── albert_model.pt
-│ ├── longformer_model.pt
-│ └── meta_model.pkl
+│   ├── bert_model.pt
+│   ├── roberta_model.pt
+│   ├── distilbert_model.pt
+│   ├── albert_model.pt
+│   ├── longformer_model.pt
+│   └── meta_model.pkl
 ├── train/
-│ ├── train_bert.py
-│ ├── train_roberta.py
-│ ├── train_distilbert.py
-│ ├── train_albert.py
-│ ├── train_longformer.py
-│ └── train_meta.py
+│   ├── train_bert.py
+│   ├── train_roberta.py
+│   ├── train_distilbert.py
+│   ├── train_albert.py
+│   ├── train_longformer.py
+│   └── train_meta.py
 ├── inference/
-│ └── ensemble_predict.py # Runs base models + meta model
+│   └── ensemble_predict.py    # Runs base models + meta model
 ├── utils/
-│ ├── preprocess.py # Text and label processing
-│ ├── feature_engineering.py # Derived features computation
-│ └── evaluation.py # Metrics and plots
+│   ├── preprocess.py          # Text and label processing
+│   ├── feature_engineering.py # Derived features computation
+│   └── evaluation.py          # Metrics and plots
 ├── app/
-│ └── main.py # Optional: Streamlit or Flask UI
+│   └── main.py                # Optional: Streamlit or Flask UI
 ├── README.md
 ├── requirements.txt
 └── config.yaml
+
 
 ---
 
