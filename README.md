@@ -121,7 +121,7 @@ x = [
 
 ## Folder Structure
 
-!(architecture.png)
+![Folder Structure](architecture.png)
 
 ---
 
