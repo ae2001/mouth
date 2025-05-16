@@ -121,7 +121,10 @@ x = [
 
 ## Folder Structure
 
-![Folder Structure](architecture.png)
+## Folder Structure
+
+<img src="architecture.png" alt="Folder Structure" width="300">
+
 
 ---
 
