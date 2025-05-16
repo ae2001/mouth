@@ -1,0 +1,56 @@
+veriscope-fake-news-detector/
+│
+├── app/                        # Frontend & API Layer (Streamlit, Flask, or FastAPI)
+│   ├── main.py                 # App entry point (dashboard or API endpoint)
+│   ├── routes.py              # API routes (if Flask/FastAPI)
+│   ├── components/            # UI components (e.g., fake news card, graphs)
+│   └── templates/             # HTML templates (if Flask-based)
+│
+├── data/                      # Data handling and storage
+│   ├── raw/                   # Raw downloaded datasets (LIAR, FakeNewsNet, etc.)
+│   ├── processed/             # Cleaned & preprocessed data
+│   ├── external/              # Fact-check DBs (Wikipedia, ClaimReview JSONs)
+│   └── streaming/             # Live tweets/posts pulled via APIs
+│
+├── models/                    # Fine-tuned models & embeddings
+│   ├── veracity_model/        # Transformer model for fake/real classification
+│   ├── claim_matcher/         # SBERT or FAISS-based semantic claim matcher
+│   └── bot_detector/          # ML or heuristic-based bot detection model
+│
+├── pipelines/                 # Training & inference pipelines
+│   ├── train_veracity.py      # Fine-tune transformer model
+│   ├── claim_match_pipeline.py# Match new claims with verified sources
+│   ├── bot_analysis.py        # Analyze user-post graph for bot-like activity
+│   └── scoring.py             # Combine all signals to score a post
+│
+├── utils/                     # Utility functions
+│   ├── preprocessing.py       # Text cleaning, tokenization
+│   ├── evaluation.py          # Metrics: precision, recall, AUC, etc.
+│   ├── fetch_reddit.py        # Reddit API wrapper
+│   ├── fetch_twitter.py       # Twitter/X API wrapper
+│   └── logger.py              # Custom logging for pipelines
+│
+├── notebooks/                 # Jupyter Notebooks for EDA, experiments
+│   ├── 01_eda.ipynb
+│   ├── 02_finetuning_roberta.ipynb
+│   └── 03_claim_matching_eval.ipynb
+│
+├── configs/                   # Configuration files
+│   ├── model_config.yaml      # Transformer model params
+│   ├── data_config.yaml       # Paths, splits, streaming sources
+│   └── app_config.yaml        # Port, model path, API keys
+│
+├── tests/                     # Unit and integration tests
+│   ├── test_veracity_model.py
+│   ├── test_claim_matcher.py
+│   └── test_api.py
+│
+├── monitoring/                # Logs and dashboards
+│   ├── logs/                  # Prediction logs, user feedback
+│   └── dashboards/            # Grafana or Streamlit dashboards
+│
+├── Dockerfile                 # Docker image definition
+├── requirements.txt           # Python dependencies
+├── .env                       # Environment variables (API keys, paths)
+├── README.md                  # Project overview and setup guide
+└── run.sh                     # Script to launch the entire pipeline
